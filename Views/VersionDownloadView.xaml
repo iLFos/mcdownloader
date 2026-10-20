@@ -1,0 +1,195 @@
+<UserControl x:Class="McDownloader.Views.VersionDownloadView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:McDownloader.Converters"
+             Background="Transparent" FontFamily="{StaticResource Font.Ui}">
+
+    <UserControl.Resources>
+        <conv:StringToVisibilityConverter x:Key="StrVis" />
+    </UserControl.Resources>
+
+    <Grid Margin="18,16,18,16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- 标题 -->
+        <Grid Grid.Row="0" Margin="0,0,0,10">
+            <StackPanel>
+                <TextBlock Text="下载游戏版本" Style="{StaticResource H1}" />
+                <TextBlock Text="原版与主流加载器一键安装，自动补齐依赖库与资源文件"
+                           Style="{StaticResource Muted}" Margin="0,5,0,0" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <Button Content="打开 .minecraft" Style="{StaticResource Btn.Ghost}" Click="OpenMc_Click" />
+                <Button Content="刷新清单" Style="{StaticResource Btn.Ghost}" Margin="8,0,0,0" Click="Refresh_Click" />
+            </StackPanel>
+        </Grid>
+
+        <!-- 加载器切换 -->
+        <ListBox x:Name="LoaderList" Grid.Row="1" Margin="0,0,0,10" SelectionChanged="Loader_Changed">
+            <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <StackPanel Orientation="Horizontal" />
+                </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem" BasedOn="{StaticResource PillItem}" />
+            </ListBox.ItemContainerStyle>
+        </ListBox>
+
+        <!-- 主体 -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="16" />
+                <ColumnDefinition Width="344" />
+            </Grid.ColumnDefinitions>
+
+            <!-- 版本列表 -->
+            <Border Style="{StaticResource Card}" Padding="14">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox x:Name="SearchBox" Tag="搜索版本号，例如 1.20.1" TextChanged="Search_TextChanged" />
+                        <ComboBox x:Name="TypeFilter" Grid.Column="1" Width="118" Margin="10,0,0,0"
+                                  SelectionChanged="TypeFilter_SelectionChanged">
+                            <ComboBoxItem Content="全部版本" IsSelected="True" />
+                            <ComboBoxItem Content="仅正式版" />
+                            <ComboBoxItem Content="仅快照" />
+                        </ComboBox>
+                    </Grid>
+
+                    <TextBlock x:Name="CountText" Grid.Row="1" Style="{StaticResource Muted}" Margin="4,10,0,6" />
+
+                    <ListBox x:Name="VersionList" Grid.Row="2" SelectionChanged="Version_SelectionChanged"
+                             VirtualizingPanel.IsVirtualizing="True" ScrollViewer.CanContentScroll="True">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem" BasedOn="{StaticResource ListRow}" />
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Id}" FontSize="13" FontWeight="SemiBold" />
+                                        <TextBlock FontSize="11" Margin="0,3,0,0"
+                                                   Foreground="{StaticResource Brush.TextTertiary}">
+                                            <Run Text="{Binding TypeText, Mode=OneWay}" />
+                                            <Run Text="  ·  " />
+                                            <Run Text="{Binding ReleaseText, Mode=OneWay}" />
+                                        </TextBlock>
+                                    </StackPanel>
+                                    <Border Grid.Column="1" Style="{StaticResource Badge}"
+                                            Visibility="{Binding InstalledText, Converter={StaticResource StrVis}}">
+                                        <TextBlock Text="已安装" FontSize="10.5"
+                                                   Foreground="{StaticResource Brush.PrimaryDeep}" />
+                                    </Border>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </Border>
+
+            <!-- 安装面板 -->
+            <Border Grid.Column="2" Style="{StaticResource Card}" Padding="16">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <!-- 版本标题固定，不随内容滚动，避免顶部被裁切 -->
+                    <StackPanel Grid.Row="0" Margin="0,0,0,6">
+                        <TextBlock x:Name="SelectedVersionText" Text="—" FontSize="22" FontWeight="SemiBold" />
+                        <TextBlock x:Name="SelectedVersionTypeText" Style="{StaticResource Muted}" Margin="0,2,0,0" />
+                    </StackPanel>
+
+                    <ScrollViewer x:Name="InstallScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled" Focusable="False">
+                        <StackPanel>
+                        <TextBlock Text="加载器版本" Style="{StaticResource FieldLabel}" Margin="0,6,0,6" />
+                        <ComboBox x:Name="LoaderVersionBox" HorizontalAlignment="Stretch" />
+                        <TextBlock x:Name="LoaderHint" Style="{StaticResource Muted}" Margin="0,7,0,0"
+                                   TextWrapping="Wrap" />
+
+                        <TextBlock Text="安装名称（versions 下的文件夹名）" Style="{StaticResource FieldLabel}"
+                                   Margin="0,12,0,6" />
+                        <TextBox x:Name="NameBox" Tag="例如 1.20.1" TextChanged="Name_TextChanged" />
+                        <TextBlock x:Name="TargetPathText" Style="{StaticResource Muted}" Margin="0,7,0,0"
+                                   TextTrimming="CharacterEllipsis" />
+
+                        <CheckBox x:Name="AssetsBox" Content="同时下载资源文件（声音、语言、字体）"
+                                  Margin="0,12,0,0" IsChecked="True" />
+
+                        <Button x:Name="InstallButton" Content="开始下载" Style="{StaticResource Btn.Primary}"
+                                Height="42" Margin="0,14,0,0" Click="Install_Click" />
+
+                        <Border x:Name="ProgressPanel" Background="{StaticResource Brush.PrimarySubtle}"
+                                BorderBrush="#FFD7F0E0" BorderThickness="1" CornerRadius="11"
+                                Padding="11,9" Margin="0,10,0,0" DataContext="{x:Null}">
+                            <StackPanel>
+                                <Grid>
+                                    <TextBlock Text="{Binding Stage, FallbackValue=等待开始}"
+                                               FontSize="12" FontWeight="SemiBold"
+                                               Foreground="{StaticResource Brush.PrimaryDeep}"
+                                               TextTrimming="CharacterEllipsis" Width="220"
+                                               HorizontalAlignment="Left" />
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <TextBlock Text="{Binding SpeedText}" FontSize="10.5" Margin="0,0,8,0"
+                                                   Foreground="{StaticResource Brush.PrimaryDark}" />
+                                        <TextBlock Text="{Binding ProgressText}" FontSize="12"
+                                                   Foreground="{StaticResource Brush.PrimaryDeep}" />
+                                    </StackPanel>
+                                </Grid>
+                                <ProgressBar Value="{Binding Progress, Mode=OneWay}" Maximum="1"
+                                             Margin="0,8,0,0" Height="6" />
+                            </StackPanel>
+                        </Border>
+
+                        <ListBox x:Name="LogList" Height="96" Margin="0,8,0,0" Visibility="Collapsed"
+                                 Background="#FFFAFBFA" BorderBrush="{StaticResource Brush.Border}"
+                                 ItemsSource="{Binding LogLines}" Padding="8"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem">
+                                    <Setter Property="Padding" Value="0,1" />
+                                    <Setter Property="Focusable" Value="False" />
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="ListBoxItem">
+                                                <ContentPresenter />
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}" FontFamily="{StaticResource Font.Mono}" FontSize="10.5"
+                                               Foreground="{StaticResource Brush.TextSecondary}" TextWrapping="Wrap" />
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>
